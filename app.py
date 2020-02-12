@@ -1,17 +1,15 @@
-import pyrebase
+import pyrebase, random, os
 from flask import Flask, flash, redirect, render_template, request, session, abort, url_for
 
-app = Flask(__name__)       #Initialze flask constructor
-
-#Add your own details
+app = Flask(__name__)
 config = {
   "apiKey": "AIzaSyD_lqIgTFSItpDOGZ1NycLoB6w4nrXWL2I",
   "authDomain": "guvi-7679a.firebaseapp.com",
   "databaseURL": "https://guvi-7679a.firebaseio.com",
-  "storageBucket": "guvi-7679a.appspot.com"
+  "storageBucket": "guvi-7679a.appspot.com",
+  "serviceAccount": "credentials/serviceAccountCredentials.json"
 }
 
-#initialize firebase
 firebase = pyrebase.initialize_app(config)
 auth = firebase.auth()
 db = firebase.database()
@@ -19,10 +17,10 @@ db = firebase.database()
 #Initialze person as dictionary
 person = {"is_logged_in": False, "name": "", "email": "", "uid": ""}
 
-#Login
 @app.route("/")
 def login():
-    return render_template("login.html")
+    result = ""
+    return render_template("login.html", result = result)
 
 #Sign up/ Register
 @app.route("/signup")
@@ -37,8 +35,7 @@ def welcome():
     else:
         return redirect(url_for('login'))
 
-#If someone clicks on login, they are redirected to /result
-@app.route("/result", methods = ["POST", "GET"])
+@app.route("/login", methods = ["POST", "GET"])
 def result():
     if request.method == "POST":        #Only if data has been posted
         result = request.form           #Get the data
@@ -47,30 +44,29 @@ def result():
         try:
             #Try signing in the user with the given information
             user = auth.sign_in_with_email_and_password(email, password)
-            #Insert the user data in the global person
             global person
             person["is_logged_in"] = True
             person["email"] = user["email"]
             person["uid"] = user["localId"]
-            #Get the name of the user
             data = db.child("users").get()
-            person["name"] = data.val()[person["uid"]]["name"]
-            #Redirect to welcome page
-            return redirect(url_for('welcome'))
-        except:
-            #If there is any error, redirect back to login
-            return redirect(url_for('login'))
+            person["name"] = user["email"]
+            return render_template("welcome.html")
+        except Exception as e:
+            result = "Incorrect email or password"
+            return render_template("login.html", result = result)
     else:
         if person["is_logged_in"] == True:
-            return redirect(url_for('welcome'))
+            return render_template("welcome.html", email = person["email"], name = person["name"])
         else:
-            return redirect(url_for('login'))
+            result = ""
+            render_template("login.html", result = result)         
 
 #If someone clicks on register, they are redirected to /register
 @app.route("/register", methods = ["POST", "GET"])
 def register():
     if request.method == "POST":        #Only listen to POST
-        result = request.form           #Get the data submitted
+        result = request.form
+        #Get the data submitted
         email = result["email"]
         password = result["pass"]
         name = result["name"]
@@ -90,15 +86,28 @@ def register():
             db.child("users").child(person["uid"]).set(data)
             #Go to welcome page
             return redirect(url_for('welcome'))
-        except:
+        except Exception as e:
+            result = "Incorrect credentials"
             #If there is any error, redirect to register
-            return redirect(url_for('register'))
+            return render_template("signup.html", result = result)
 
     else:
         if person["is_logged_in"] == True:
             return redirect(url_for('welcome'))
         else:
-            return redirect(url_for('register'))
+            result = ""
+            return render_template("signup.html", result = result)
+
+
+@app.route("/alphabets", methods = ["POST", "GET"])
+def Alphabets():
+    file = random.choice([
+        x for x in os.listdir(os.path.join('static', 'dataset', 'alphabets'))
+        if os.path.isfile(os.path.join('static', 'dataset', 'alphabets', x))
+    ])
+
+    file = os.path.join('static', 'dataset', 'alphabets', file)
+    return render_template("flashcard.html", file = file)
 
 if __name__ == "__main__":
-    app.run()
+    app.run(debug=True)

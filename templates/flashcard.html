@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Welcome | Guvi</title>
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename = 'main.css') }}">
+</head>
+<body>
+<div class="wrapper fadeInDown">
+	<div id="formContent">
+		<img height="300px" width="200px" src="{{ file }}" alt="nothing"><br />
+		<input type="button" onclick="window.location.href='/object';" name="findflashcard" class="fadeIn fourth" value="Find flashcard">
+		<input type="button" onclick="window.location.href='/alphabets';" name="tryanothercard" class="fadeIn fourth" value="Try Another Card">
+    </div>
+</div>
+</body>
+</html>
